@@ -2,6 +2,7 @@ package com.seliverstov.arrayList;
 
 import java.util.Arrays;
 import java.util.Iterator;
+import java.util.NoSuchElementException;
 
 
 public class MyArrayList<T> implements MyList<T>  {
@@ -24,13 +25,14 @@ public class MyArrayList<T> implements MyList<T>  {
         this.elements = empty_elements;
     }
 
-
     @Override
     public boolean add(Object t) {
-        if (size == elements.length){
-            this.elements = Arrays.copyOf(this.elements,this.elements.length + 1);
+        if (size == this.elements.length){
+            Object [] temp  = this.elements;
+            this.elements = new Object[temp.length+1];
+            System.arraycopy(temp,0,elements,0,temp.length);
         }
-        elements[size++] = t;
+        this.elements[this.size++] = t;
         trim();
         return true;
     }
@@ -38,26 +40,63 @@ public class MyArrayList<T> implements MyList<T>  {
     @Override
     public void remove(int index) {
         checkIndex(index);
-        if (index < elements.length-1) System.arraycopy(elements, index + 1, elements, index, elements.length-index-1);
-        elements[elements.length-1] = null;
-        trim ();
-
+        Object[] temp = this.elements;
+        this.elements = new Object[temp.length-1];
+        System.arraycopy(temp, 0, this.elements, 0,index );
+        int elemAfterInd = temp.length-index-1;
+        System.arraycopy(temp,index+1,this.elements,index,elemAfterInd);
+        this.size--;
     }
 
     @Override
     public T get(int index) {
         checkIndex(index);
-        return (T) elements[index];
+        return (T) this.elements[index];
     }
 
     @Override
     public int size() {
-        return elements.length;
+        return this.size;
+    }
+
+    @Override
+    public String toString() {
+        return Arrays.toString(elements);
     }
 
     @Override
     public Iterator <T> iterator() {
-        return new IteratorList<T>((T[]) elements);
+        return new MyArrayList.IteratorList();
+    }
+
+
+    private class IteratorList <T> implements Iterator<T> {
+        private int cursor;
+        private int lastR = -1;
+
+
+        @Override
+        public boolean hasNext() {
+            return this.cursor < MyArrayList.this.size;
+        }
+
+        @Override
+        public T next() {
+            int i = this.cursor;
+            if (i >= MyArrayList.this.size) throw new NoSuchElementException();
+            else {
+                this.cursor = i+1;
+                return (T) MyArrayList.this.elements[this.lastR = i];
+            }
+        }
+
+        @Override
+        public void remove() {
+            if (lastR < 0 || MyArrayList.this.elements[index] == null) throw new IllegalStateException();
+            MyArrayList.this.remove(this.lastR);
+            this.cursor = this.lastR;
+            this.lastR = -1;
+        }
     }
 
     private void trim () {
@@ -66,11 +105,11 @@ public class MyArrayList<T> implements MyList<T>  {
                 this.elements = empty_elements;
             }
             else {
-                elements = Arrays.copyOf(this.elements,this.size);
+                this.elements = Arrays.copyOf(this.elements,this.size);
             }
         }
     }
     private void checkIndex(int index) {
-        if (index < 0 || index > elements.length) throw new IllegalArgumentException();
+        if (index < 0 || index > this.elements.length) throw new IllegalArgumentException();
     }
 }
